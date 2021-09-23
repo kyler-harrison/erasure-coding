@@ -1,4 +1,12 @@
 // largest table (multiplication and division) is 64 x 64
 #define MAX_TABLE (64)
 
-void load_tables(int, int [MAX_TABLE][MAX_TABLE], int [MAX_TABLE][MAX_TABLE]);
+// length of file name string 
+#define MAX_PATH_LEN (50)
+
+// status codes
+#define OK (0)
+#define INVALID_FIELD (-1)
+
+
+int load_table(int, int [MAX_TABLE][MAX_TABLE]);
