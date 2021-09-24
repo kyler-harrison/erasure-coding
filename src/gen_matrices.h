@@ -7,6 +7,6 @@
 // status codes
 #define OK (0)
 #define INVALID_FIELD (-1)
+#define FILE_READ_ERR (-2)
 
-
-int load_table(int, int [MAX_TABLE][MAX_TABLE]);
+int load_table(int, int, int [MAX_TABLE][MAX_TABLE]);
