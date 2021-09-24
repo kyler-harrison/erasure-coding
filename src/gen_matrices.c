@@ -1,6 +1,6 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-
 #include "gen_matrices.h"
 
 /*  TODO: 
@@ -17,9 +17,22 @@
  */
 
 int main(int argc, char **argv) {
+	char arg_status_str[MAX_STATUS_LEN] = "";
+	int field;
+	int arg_status = handle_args(argc, argv, arg_status_str, &field);
+
+	// TODO rm
+	arg_status = OK;
+	field = 4;
+
+	if (arg_status != OK) {
+		fprintf(stderr, "%s\n", arg_status_str);  // TODO make sure this works
+		return arg_status;
+	}
+
+	// 2d arrays of finite arithmetic tables
 	int mul_table[MAX_TABLE][MAX_TABLE];
 	int div_table[MAX_TABLE][MAX_TABLE];
-	int field = 4;  // TODO set with cl args
 
 	// file path determined by field number below
 	char mul_path[MAX_PATH_LEN] = "";
@@ -29,32 +42,44 @@ int main(int argc, char **argv) {
 	int num_rows;
 	int num_cols;
 
-	// determine path based on field - TODO should probs change this, will always need mul and div tables 
+	// determine path based on field 
 	switch (field) {
 		case 6:
 			strncpy(mul_path, "../tables/multiplication/2to6_1000011.txt", MAX_PATH_LEN);
+			mul_path[sizeof("../tables/multiplication/2to6_1000011.txt") - 1] = '\0';
 			strncpy(div_path, "../tables/division/2to6_1000011.txt", MAX_PATH_LEN);
+			div_path[sizeof("../tables/division/2to6_1000011.txt") - 1] = '\0';
+
 			num_rows = FIELD_6_DIMS;
 			num_cols = FIELD_6_DIMS;
 			break;
 
 		case 5:
 			strncpy(mul_path, "../tables/multiplication/2to5_100101.txt", MAX_PATH_LEN);
+			mul_path[sizeof("../tables/multiplication/2to5_100101.txt") - 1] = '\0';
 			strncpy(div_path, "../tables/division/2to5_100101.txt", MAX_PATH_LEN);
+			div_path[sizeof("../tables/division/2to5_100101.txt") - 1] = '\0';
+
 			num_rows = FIELD_5_DIMS;
 			num_cols = FIELD_5_DIMS;
 			break;
 
 		case 4:
 			strncpy(mul_path, "../tables/multiplication/2to4_10011.txt", MAX_PATH_LEN);
+			mul_path[sizeof("../tables/multiplication/2to4_10011.txt") - 1] = '\0';
 			strncpy(div_path, "../tables/division/2to4_10011.txt", MAX_PATH_LEN);
+			div_path[sizeof("../tables/division/2to4_10011.txt") - 1] = '\0';
+
 			num_rows = FIELD_4_DIMS;
 			num_cols = FIELD_4_DIMS;
 			break;
 
 		case 3:
 			strncpy(mul_path, "../tables/multiplication/2to3_1011.txt", MAX_PATH_LEN);
+			mul_path[sizeof("../tables/multiplication/2to3_1011.txt") - 1] = '\0';
 			strncpy(div_path, "../tables/division/2to3_1011.txt", MAX_PATH_LEN);
+			div_path[sizeof("../tables/division/2to3_1011.txt") - 1] = '\0';
+
 			num_rows = FIELD_3_DIMS;
 			num_cols = FIELD_3_DIMS;
 			break;
@@ -86,6 +111,13 @@ int main(int argc, char **argv) {
 	}
 	*/
 
+	return 0;
+}
+
+/*
+ *  Processes command line arguments. Does checks, decides on field. 
+ */
+int handle_args(int argc, char **argv, char arg_status[MAX_STATUS_LEN], int *field) {
 	return 0;
 }
 
