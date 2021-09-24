@@ -18,72 +18,45 @@
 
 int main(int argc, char **argv) {
 	int mul_table[MAX_TABLE][MAX_TABLE];
+	int div_table[MAX_TABLE][MAX_TABLE];
 	int field = 4;  // TODO set with cl args
-	int type = 0;  // TODO define as multiplication table constant type somewhere
 
 	// file path determined by field number below
-	char path[MAX_PATH_LEN] = "";
+	char mul_path[MAX_PATH_LEN] = "";
+	char div_path[MAX_PATH_LEN] = "";
 
 	// these will be set to a constant in the header file based on the field number below
 	int num_rows;
 	int num_cols;
 
-	// determine path based on field
+	// determine path based on field - TODO should probs change this, will always need mul and div tables 
 	switch (field) {
 		case 6:
-			if (type == MUL_TYPE) {
-				strncpy(path, "../tables/multiplication/2to6_1000011.txt", MAX_PATH_LEN);
-			} else if (type == DIV_TYPE) {
-				strncpy(path, "../tables/division/2to6_1000011.txt", MAX_PATH_LEN);
-			} else {
-				return INVALID_TYPE;
-			}
-
+			strncpy(mul_path, "../tables/multiplication/2to6_1000011.txt", MAX_PATH_LEN);
+			strncpy(div_path, "../tables/division/2to6_1000011.txt", MAX_PATH_LEN);
 			num_rows = FIELD_6_DIMS;
 			num_cols = FIELD_6_DIMS;
-
 			break;
 
 		case 5:
-			if (type == MUL_TYPE) {
-				strncpy(path, "../tables/multiplication/2to5_100101.txt", MAX_PATH_LEN);
-			} else if (type == DIV_TYPE) {
-				strncpy(path, "../tables/division/2to5_100101.txt", MAX_PATH_LEN);
-			} else {
-				return INVALID_TYPE;
-			}
-
+			strncpy(mul_path, "../tables/multiplication/2to5_100101.txt", MAX_PATH_LEN);
+			strncpy(div_path, "../tables/division/2to5_100101.txt", MAX_PATH_LEN);
 			num_rows = FIELD_5_DIMS;
 			num_cols = FIELD_5_DIMS;
-
 			break;
 
 		case 4:
-			if (type == MUL_TYPE) {
-				strncpy(path, "../tables/multiplication/2to4_10011.txt", MAX_PATH_LEN);
-			} else if (type == DIV_TYPE) {
-				strncpy(path, "../tables/division/2to4_10011.txt", MAX_PATH_LEN);
-			} else {
-				return INVALID_TYPE;
-			}
-
+			strncpy(mul_path, "../tables/multiplication/2to4_10011.txt", MAX_PATH_LEN);
+			strncpy(div_path, "../tables/division/2to4_10011.txt", MAX_PATH_LEN);
 			num_rows = FIELD_4_DIMS;
 			num_cols = FIELD_4_DIMS;
-
 			break;
 
 		case 3:
-			if (type == MUL_TYPE) {
-				strncpy(path, "../tables/multiplication/2to3_1011.txt", MAX_PATH_LEN);
-			} else if (type == DIV_TYPE) {
-				strncpy(path, "../tables/division/2to3_1011.txt", MAX_PATH_LEN);
-			} else {
-				return INVALID_TYPE;
-			}
-
+			strncpy(mul_path, "../tables/multiplication/2to3_1011.txt", MAX_PATH_LEN);
+			strncpy(div_path, "../tables/division/2to3_1011.txt", MAX_PATH_LEN);
 			num_rows = FIELD_3_DIMS;
 			num_cols = FIELD_3_DIMS;
-
 			break;
 
 		default:
@@ -91,7 +64,27 @@ int main(int argc, char **argv) {
 	}
 
 	// get multiplication/division table
-	load_table(field, path, mul_table, num_rows, num_cols);
+	load_table(field, mul_path, mul_table, num_rows, num_cols);
+	load_table(field, div_path, div_table, num_rows, num_cols);
+
+	// TODO rm - test print 
+	/*
+	for (int i = 0; i < num_rows; i++) {
+		for (int j = 0; j < num_cols; j++) {
+			printf("%d ", mul_table[i][j]);
+		}
+		printf("\n");
+	}
+
+	printf("\n");
+
+	for (int i = 0; i < num_rows; i++) {
+		for (int j = 0; j < num_cols; j++) {
+			printf("%d ", div_table[i][j]);
+		}
+		printf("\n");
+	}
+	*/
 
 	return 0;
 }
