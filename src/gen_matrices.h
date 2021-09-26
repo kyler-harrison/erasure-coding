@@ -6,12 +6,13 @@
 #define FIELD_6_DIMS (64)
 
 #define MAX_PATH_LEN (50)  // length of file name string 
-#define MAX_STATUS_LEN (100)  // length of status message to output
+#define MAX_STATUS_LEN (200)  // length of status message to output
 
 // status codes
 #define OK (0)
 #define INVALID_FIELD (-1)
 #define FILE_READ_ERR (-2)
+#define BAD_ARGS (-3)
 
 // function prototypes
 int load_table(int field, char path[MAX_PATH_LEN], int table[MAX_TABLE][MAX_TABLE], int rows, int cols);
