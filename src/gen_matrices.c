@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 #include "gen_matrices.h"
 
 /*  TODO: 
@@ -20,10 +21,6 @@ int main(int argc, char **argv) {
 	char arg_status_str[MAX_STATUS_LEN] = "";
 	int field;
 	int arg_status = handle_args(argc, argv, arg_status_str, &field);
-
-	// TODO rm
-	arg_status = OK;
-	field = 4;
 
 	if (arg_status != OK) {
 		fprintf(stderr, "%s\n", arg_status_str);  // TODO make sure this works
@@ -116,9 +113,29 @@ int main(int argc, char **argv) {
 
 /*
  *  Processes command line arguments. Does checks, decides on field. 
+ *  For now, args are all required, should be:
+ *  ./gen_matrices [k] [n] [overwrite_bool]
+ *  TODO should include optional decision for drop rows?
  */
+
 int handle_args(int argc, char **argv, char arg_status[MAX_STATUS_LEN], int *field) {
-	return 0;
+	if (argc != 4) {
+		strncpy(arg_status, "Need 3 arguments corresponding to k, n, and overwrite boolean.\nExample: ./gen_matrices 4 2 1", MAX_STATUS_LEN);
+		arg_status[sizeof("Need 3 arguments corresponding to k, n, and overwrite boolean.\nExample: ./gen_matrices 4 2 1") - 1] = '\0';
+		return BAD_ARGS;
+	}
+
+	int k = atoi(argv[1]);
+	int n = atoi(argv[2]);
+	int overwrite = atoi(argv[3]);
+
+	if ((k < 0) || (n < 0)) {
+		strncpy(arg_status, "Ensure that the k and n arguments are greater than 0.", MAX_STATUS_LEN);
+		arg_status[sizeof("Ensure that the k and n arguments are greater than 0.") - 1] = '\0';
+		return BAD_ARGS;
+	}
+	
+	return OK;
 }
 
 /*
