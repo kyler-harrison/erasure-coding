@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdint.h>
+#include <math.h>
 #include "gen_matrices.h"
 
 /*  TODO: 
@@ -26,6 +26,7 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "%s\n", arg_status_str);  // TODO make sure this works
 		return arg_status;
 	}
+	printf("%d\n", field);
 
 	// 2d arrays of finite arithmetic tables
 	int mul_table[MAX_TABLE][MAX_TABLE];
@@ -119,20 +120,55 @@ int main(int argc, char **argv) {
  */
 
 int handle_args(int argc, char **argv, char arg_status[MAX_STATUS_LEN], int *field) {
+	// all args required
 	if (argc != 4) {
 		strncpy(arg_status, "Need 3 arguments corresponding to k, n, and overwrite boolean.\nExample: ./gen_matrices 4 2 1", MAX_STATUS_LEN);
 		arg_status[sizeof("Need 3 arguments corresponding to k, n, and overwrite boolean.\nExample: ./gen_matrices 4 2 1") - 1] = '\0';
 		return BAD_ARGS;
 	}
 
+	// get args corresponding to k, n, overwrite bool as ints
 	int k = atoi(argv[1]);
 	int n = atoi(argv[2]);
 	int overwrite = atoi(argv[3]);
 
-	if ((k < 0) || (n < 0)) {
-		strncpy(arg_status, "Ensure that the k and n arguments are greater than 0.", MAX_STATUS_LEN);
-		arg_status[sizeof("Ensure that the k and n arguments are greater than 0.") - 1] = '\0';
+	if ((k <= 0) || (n < 2)) {
+		strncpy(arg_status, "Ensure that k is greater than 0 and that n is greater than 2.", MAX_STATUS_LEN);
+		arg_status[sizeof("Ensure that k is greater than 0 and that n is greater than 2.") - 1] = '\0';
 		return BAD_ARGS;
+	} 
+
+	if ((overwrite != 0) && (overwrite != 1)) {
+		strncpy(arg_status, "The overwrite boolean must be either 0 or 1.", MAX_STATUS_LEN);
+		arg_status[sizeof("The overwrite boolean must be either 0 or 1.") - 1] = '\0';
+		return BAD_ARGS;	
+	}
+
+	// pretty sure k < n is possible, but assuming k > n for now
+	if (k < n) {
+		strncpy(arg_status, "k must be greater than n.", MAX_STATUS_LEN);
+		arg_status[sizeof("k must be greater than n.") - 1] = '\0';
+		return BAD_ARGS;
+	}
+
+	// need a cauchy matrix dims (k + n) x n
+	// which means need a set (x) of length (k + n) disjoint of another set (y) of length n
+	// so total number of unique numbers is k + n + n 
+	int unique_nums = k + (2 * n);
+
+	// determine the finite field power based on the number of unique numbers required for k and n
+	if (unique_nums > pow(2, 6)) {
+		strncpy(arg_status, "The inputted values of k and n require a finite field larger than 2**64, try smaller values.", MAX_STATUS_LEN);
+		arg_status[sizeof("The inputted values of k and n require a finite field larger than 2**64, try smaller values.") - 1] = '\0';
+		return BAD_ARGS;
+	} else if ((pow(2, 5) < unique_nums) && (unique_nums <= pow(2, 6))) {
+		*field = 6;
+	} else if ((pow(2, 4) < unique_nums) && (unique_nums <= pow(2, 5))) {
+		*field = 5;
+	} else if ((pow(2, 3) < unique_nums) && (unique_nums <= pow(2, 4))) {
+		*field = 4;
+	} else {
+		*field = 3;
 	}
 	
 	return OK;
@@ -144,13 +180,13 @@ int handle_args(int argc, char **argv, char arg_status[MAX_STATUS_LEN], int *fie
  */
 
 int load_table(int field, char path[MAX_PATH_LEN], int table[MAX_TABLE][MAX_TABLE], int num_rows, int num_cols) {
-
 	FILE *file_ptr = fopen(path, "r");
 
 	if (file_ptr == NULL) {
 		return FILE_READ_ERR;
 	}
 
+	// each line of file is row in arithmetic table, nums sep by space
 	for (int i = 0; i < num_rows; i++) {
 		for (int j = 0; j < num_cols; j++) {
 			fscanf(file_ptr, "%d", &table[i][j]);
