@@ -99,6 +99,18 @@ int main(int argc, char **argv) {
 	// of (k + n) x n dims
 	int *x = malloc(sizeof(int) * (k + n));
 	int *y = malloc(sizeof(int) * n);
+	gen_x_y(k, n, x, y);
+
+	for (int i = 0; i < (k + n); i++) {
+		printf("%d ", x[i]);
+	}
+	printf("\n");
+
+	for (int j = (k + n); j < (k + 2 * n); j++) {
+		y[j] = j;
+		printf("%d ", y[j]);
+	}
+	printf("\n");
 
 	free(x);
 	free(y);
@@ -201,5 +213,12 @@ int load_table(int field, char path[MAX_PATH_LEN], int table[MAX_TABLE][MAX_TABL
  *  may be desirable for security reasons? not entirely sure if important).
  */
 
-int gen_x_y(int k, int n, int *x, int *y) {
+void gen_x_y(int k, int n, int *x, int *y) {
+	for (int i = 0; i < (k + n); i++) {
+		x[i] = i;
+	}
+
+	for (int j = (k + n); j < (k + 2 * n); j++) {
+		y[j] = j;
+	}
 }
