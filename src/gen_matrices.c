@@ -9,7 +9,7 @@
  *  [x] load mul/div tables into arrays (probs need to #define possible dimensions 
  *     beforehand and init based on cl args unless there's a better way, i guess 
  *	   could just allocate max table size and then smaller ones only use what they need)
- *  [] generate x, y sets for cauchy
+ *  [x] generate x, y sets for cauchy
  *  [] generate cauchy matrix
  *  [] invert cauchy matrix
  *  [] expand matrix (used to create final encoder/decoder)
