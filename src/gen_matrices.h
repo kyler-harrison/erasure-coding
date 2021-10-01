@@ -16,4 +16,4 @@
 
 // function prototypes
 int load_table(int field, char path[MAX_PATH_LEN], int table[MAX_TABLE][MAX_TABLE], int rows, int cols);
-int handle_args(int argc, char **argv, char arg_status[MAX_STATUS_LEN], int *field);
+int handle_args(int argc, char **argv, char arg_status[MAX_STATUS_LEN], int *k, int *n, int *overwrite, int *field);
