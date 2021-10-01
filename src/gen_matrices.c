@@ -5,28 +5,31 @@
 #include "gen_matrices.h"
 
 /*  TODO: 
- *  process cl args, do checks on k, n, num row drops, and whatever else
- *  load mul/div tables into arrays (probs need to #define possible dimensions 
- *  beforehand and init based on cl args unless there's a better way, i guess 
- *	could just allocate max table size and then smaller ones only use what they need)
- *  generate x, y sets for cauchy
- *  generate cauchy matrix
- *  invert cauchy matrix
- *  expand matrix (used to create final encoder/decoder)
- *  write encode_decode.c containing arrays of encoder/decoder
- *  write encode_decode.h
+ *  [] process cl args, do checks on k, n, num row drops, and whatever else
+ *  [] load mul/div tables into arrays (probs need to #define possible dimensions 
+ *     beforehand and init based on cl args unless there's a better way, i guess 
+ *	   could just allocate max table size and then smaller ones only use what they need)
+ *  [] generate x, y sets for cauchy
+ *  [] generate cauchy matrix
+ *  [] invert cauchy matrix
+ *  [] expand matrix (used to create final encoder/decoder)
+ *  [] write encode_decode.c containing arrays of encoder/decoder
+ *  [] write encode_decode.h
  */
 
 int main(int argc, char **argv) {
 	char arg_status_str[MAX_STATUS_LEN] = "";
+	int k;
+	int n;
+	int overwrite;
 	int field;
-	int arg_status = handle_args(argc, argv, arg_status_str, &field);
+	int arg_status = handle_args(argc, argv, arg_status_str, &k, &n, &overwrite, &field);
 
 	if (arg_status != OK) {
 		fprintf(stderr, "%s\n", arg_status_str);  // TODO make sure this works
 		return arg_status;
 	}
-	printf("%d\n", field);
+	printf("k = %d, n = %d, overwrite = %d, arg_status = %d, field = %d\n", k, n, overwrite, arg_status, field);
 
 	// 2d arrays of finite arithmetic tables
 	int mul_table[MAX_TABLE][MAX_TABLE];
@@ -119,7 +122,7 @@ int main(int argc, char **argv) {
  *  TODO should include optional decision for drop rows?
  */
 
-int handle_args(int argc, char **argv, char arg_status[MAX_STATUS_LEN], int *field) {
+int handle_args(int argc, char **argv, char arg_status[MAX_STATUS_LEN], int *k, int *n, int *overwrite, int *field) {
 	// all args required
 	if (argc != 4) {
 		strncpy(arg_status, "Need 3 arguments corresponding to k, n, and overwrite boolean.\nExample: ./gen_matrices 4 2 1", MAX_STATUS_LEN);
@@ -128,24 +131,24 @@ int handle_args(int argc, char **argv, char arg_status[MAX_STATUS_LEN], int *fie
 	}
 
 	// get args corresponding to k, n, overwrite bool as ints
-	int k = atoi(argv[1]);
-	int n = atoi(argv[2]);
-	int overwrite = atoi(argv[3]);
+	*k = atoi(argv[1]);
+	*n = atoi(argv[2]);
+	*overwrite = atoi(argv[3]);
 
-	if ((k <= 0) || (n < 2)) {
+	if ((*k <= 0) || (*n < 2)) {
 		strncpy(arg_status, "Ensure that k is greater than 0 and that n is greater than 2.", MAX_STATUS_LEN);
 		arg_status[sizeof("Ensure that k is greater than 0 and that n is greater than 2.") - 1] = '\0';
 		return BAD_ARGS;
 	} 
 
-	if ((overwrite != 0) && (overwrite != 1)) {
+	if ((*overwrite != 0) && (*overwrite != 1)) {
 		strncpy(arg_status, "The overwrite boolean must be either 0 or 1.", MAX_STATUS_LEN);
 		arg_status[sizeof("The overwrite boolean must be either 0 or 1.") - 1] = '\0';
 		return BAD_ARGS;	
 	}
 
 	// pretty sure k < n is possible, but assuming k > n for now
-	if (k < n) {
+	if (*k < *n) {
 		strncpy(arg_status, "k must be greater than n.", MAX_STATUS_LEN);
 		arg_status[sizeof("k must be greater than n.") - 1] = '\0';
 		return BAD_ARGS;
@@ -154,7 +157,7 @@ int handle_args(int argc, char **argv, char arg_status[MAX_STATUS_LEN], int *fie
 	// need a cauchy matrix dims (k + n) x n
 	// which means need a set (x) of length (k + n) disjoint of another set (y) of length n
 	// so total number of unique numbers is k + n + n 
-	int unique_nums = k + (2 * n);
+	int unique_nums = *k + (2 * *n);
 
 	// determine the finite field power based on the number of unique numbers required for k and n
 	if (unique_nums > pow(2, 6)) {
