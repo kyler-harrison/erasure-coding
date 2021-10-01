@@ -5,8 +5,8 @@
 #include "gen_matrices.h"
 
 /*  TODO: 
- *  [] process cl args, do checks on k, n, num row drops, and whatever else
- *  [] load mul/div tables into arrays (probs need to #define possible dimensions 
+ *  [x] process cl args, do checks on k, n, num row drops, and whatever else
+ *  [x] load mul/div tables into arrays (probs need to #define possible dimensions 
  *     beforehand and init based on cl args unless there's a better way, i guess 
  *	   could just allocate max table size and then smaller ones only use what they need)
  *  [] generate x, y sets for cauchy
@@ -26,16 +26,18 @@ int main(int argc, char **argv) {
 	int arg_status = handle_args(argc, argv, arg_status_str, &k, &n, &overwrite, &field);
 
 	if (arg_status != OK) {
-		fprintf(stderr, "%s\n", arg_status_str);  // TODO make sure this works
+		fprintf(stderr, "%s\n", arg_status_str);
 		return arg_status;
 	}
 	printf("k = %d, n = %d, overwrite = %d, arg_status = %d, field = %d\n", k, n, overwrite, arg_status, field);
+
+	// TODO should consider dynamic mem allocation for tables and path strings
 
 	// 2d arrays of finite arithmetic tables
 	int mul_table[MAX_TABLE][MAX_TABLE];
 	int div_table[MAX_TABLE][MAX_TABLE];
 
-	// file path determined by field number below
+	// table file paths determined by field number below
 	char mul_path[MAX_PATH_LEN] = "";
 	char div_path[MAX_PATH_LEN] = "";
 
@@ -43,7 +45,7 @@ int main(int argc, char **argv) {
 	int num_rows;
 	int num_cols;
 
-	// determine path based on field 
+	// determine paths based on field 
 	switch (field) {
 		case 6:
 			strncpy(mul_path, "../tables/multiplication/2to6_1000011.txt", MAX_PATH_LEN);
@@ -93,24 +95,13 @@ int main(int argc, char **argv) {
 	load_table(field, mul_path, mul_table, num_rows, num_cols);
 	load_table(field, div_path, div_table, num_rows, num_cols);
 
-	// TODO rm - test print 
-	/*
-	for (int i = 0; i < num_rows; i++) {
-		for (int j = 0; j < num_cols; j++) {
-			printf("%d ", mul_table[i][j]);
-		}
-		printf("\n");
-	}
+	// allocate mem for x and y disjoint sets (used to make a Cauchy matrix
+	// of (k + n) x n dims
+	int *x = malloc(sizeof(int) * (k + n));
+	int *y = malloc(sizeof(int) * n);
 
-	printf("\n");
-
-	for (int i = 0; i < num_rows; i++) {
-		for (int j = 0; j < num_cols; j++) {
-			printf("%d ", div_table[i][j]);
-		}
-		printf("\n");
-	}
-	*/
+	free(x);
+	free(y);
 
 	return 0;
 }
@@ -179,7 +170,8 @@ int handle_args(int argc, char **argv, char arg_status[MAX_STATUS_LEN], int *k, 
 
 /*
  *  Loads in a finite field arithmetic table from one of the text files in 
- *  the tables directory.
+ *  the tables directory. Each line corresponds to a table row, numbers are
+ *  seperated by spaces. mul_table[2][4] means 2 * 4 (in that finite field).
  */
 
 int load_table(int field, char path[MAX_PATH_LEN], int table[MAX_TABLE][MAX_TABLE], int num_rows, int num_cols) {
@@ -201,3 +193,13 @@ int load_table(int field, char path[MAX_PATH_LEN], int table[MAX_TABLE][MAX_TABL
 	return OK;
 }
 
+/*
+ *  Generates two disjoint sets (x and y). x is length of (k + n), y is length
+ *  of n. Sets are later used to generate Cauchy matrix of (k + n) x n. For 
+ *  now, the numbers in these sets just increase linearly. Could change how
+ *  and where numbers are assigned to create a different generator matrix (this
+ *  may be desirable for security reasons? not entirely sure if important).
+ */
+
+int gen_x_y(int k, int n, int *x, int *y) {
+}
