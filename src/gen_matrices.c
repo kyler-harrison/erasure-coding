@@ -10,7 +10,7 @@
  *     beforehand and init based on cl args unless there's a better way, i guess 
  *	   could just allocate max table size and then smaller ones only use what they need)
  *  [x] generate x, y sets for cauchy
- *  [] generate cauchy matrix
+ *  [x] generate cauchy matrix
  *  [] invert cauchy matrix
  *  [] expand matrix (used to create final encoder/decoder)
  *  [] write encode_decode.c containing arrays of encoder/decoder
@@ -112,16 +112,6 @@ int main(int argc, char **argv) {
 
 	// generate cauchy matrix
 	gen_cauchy(cauchy, x, y, k, n, div_table);
-
-	// TODO check output is correct (they appear to be)
-	/*
-	for (int i = 0; i < (k + n); i++) {
-		for (int j = 0; j < n; j++) {
-			printf("%d ", cauchy[i][j]);
-		}
-		printf("\n");
-	}
-	*/
 
 	// FREEDOM
 	free(x);
