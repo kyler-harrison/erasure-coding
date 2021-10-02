@@ -97,23 +97,38 @@ int main(int argc, char **argv) {
 
 	// allocate mem for x and y disjoint sets (used to make a Cauchy matrix
 	// of (k + n) x n dims
-	int *x = malloc(sizeof(int) * (k + n));
-	int *y = malloc(sizeof(int) * n);
+	int *x = (int *) malloc(sizeof(int) * (k + n));
+	int *y = (int *) malloc(sizeof(int) * n);
+
+	// generate x and y sets
 	gen_x_y(k, n, x, y);
 
+	// allocate mem for 2d cauchy matrix
+	// cauchy is (k + n) by n (or length(x) by length(y)), how many times have I commented this?
+	int *cauchy[k + n];
 	for (int i = 0; i < (k + n); i++) {
-		printf("%d ", x[i]);
+		cauchy[i] = (int *) malloc(n * sizeof(int));
 	}
-	printf("\n");
 
-	for (int j = (k + n); j < (k + 2 * n); j++) {
-		y[j] = j;
-		printf("%d ", y[j]);
+	// generate cauchy matrix
+	gen_cauchy(cauchy, x, y, k, n, div_table);
+
+	// TODO check output is correct (they appear to be)
+	/*
+	for (int i = 0; i < (k + n); i++) {
+		for (int j = 0; j < n; j++) {
+			printf("%d ", cauchy[i][j]);
+		}
+		printf("\n");
 	}
-	printf("\n");
+	*/
 
+	// FREEDOM
 	free(x);
 	free(y);
+	for (int i = 0; i < (k + n); i++) {
+		free(cauchy[i]);
+	}
 
 	return 0;
 }
@@ -218,7 +233,27 @@ void gen_x_y(int k, int n, int *x, int *y) {
 		x[i] = i;
 	}
 
+	// y needs to start at the last value of x + 1, but still needs idx from 0
+	int y_idx = 0;
+
 	for (int j = (k + n); j < (k + 2 * n); j++) {
-		y[j] = j;
+		y[y_idx] = j;
+		y_idx++;
 	}
 }
+
+/*
+ *  Generates a length(x) by length(y) Cauchy matrix. If x and y are generated
+ *  correctly, this will be a (k + n) by n matrix.
+ *  See: https://en.wikipedia.org/wiki/Cauchy_matrix
+ */
+void gen_cauchy(int **cauchy, int *x, int *y, int k, int n, int div_table[MAX_TABLE][MAX_TABLE]) {
+	for (int i = 0; i < (k + n); i++) {
+		for (int j = 0; j < n; j++) {
+			// note that div_table[1][3] means 1 div 3 in the finite field, and xor 
+			// is subtraction/addition 
+			cauchy[i][j] = div_table[1][x[i] ^ y[j]];
+		}
+	}
+}
+
