@@ -11,8 +11,8 @@
  *	   could just allocate max table size and then smaller ones only use what they need)
  *  [x] generate x, y sets for cauchy
  *  [x] generate cauchy matrix
- *  [] invert cauchy matrix
  *  [] expand matrix (used to create final encoder/decoder)
+ *  [] invert cauchy matrix
  *  [] write encode_decode.c containing arrays of encoder/decoder
  *  [] write encode_decode.h
  */
@@ -113,11 +113,31 @@ int main(int argc, char **argv) {
 	// generate cauchy matrix
 	gen_cauchy(cauchy, x, y, k, n, div_table);
 
+	// allocate mem for 2d expanded cauchy matrix
+	// expanded_cauchy has dims: field * (k + n) x field * n
+	int *expanded_cauchy[field * (k + n)];
+	for (int i = 0; i < (field * (k + n)); i++) {
+		expanded_cauchy[i] = (int *) malloc(field * n * sizeof(int));
+	}
+
+	// generate expanded cauchy matrix
+	expand_matrix(cauchy, expanded_cauchy, field, k, n, mul_table);
+
+	for (int i = 0; i < field * (k + n); i++) {
+		for (int j = 0; j < field * n; j++) {
+			printf("%d ", expanded_cauchy[i][j]);
+		}
+		printf("\n");
+	}
+
 	// FREEDOM
 	free(x);
 	free(y);
 	for (int i = 0; i < (k + n); i++) {
 		free(cauchy[i]);
+	}
+	for (int i = 0; i < (field * (k + n)); i++) {
+		free(expanded_cauchy[i]);
 	}
 
 	return 0;
@@ -169,8 +189,8 @@ int handle_args(int argc, char **argv, char arg_status[MAX_STATUS_LEN], int *k, 
 
 	// determine the finite field power based on the number of unique numbers required for k and n
 	if (unique_nums > pow(2, 6)) {
-		strncpy(arg_status, "The inputted values of k and n require a finite field larger than 2**64, try smaller values.", MAX_STATUS_LEN);
-		arg_status[sizeof("The inputted values of k and n require a finite field larger than 2**64, try smaller values.") - 1] = '\0';
+		strncpy(arg_status, "The inputted values of k and n require a finite field larger than 2**6, try smaller values.", MAX_STATUS_LEN);
+		arg_status[sizeof("The inputted values of k and n require a finite field larger than 2**6, try smaller values.") - 1] = '\0';
 		return BAD_ARGS;
 	} else if ((pow(2, 5) < unique_nums) && (unique_nums <= pow(2, 6))) {
 		*field = 6;
@@ -237,12 +257,55 @@ void gen_x_y(int k, int n, int *x, int *y) {
  *  correctly, this will be a (k + n) by n matrix.
  *  See: https://en.wikipedia.org/wiki/Cauchy_matrix
  */
+
 void gen_cauchy(int **cauchy, int *x, int *y, int k, int n, int div_table[MAX_TABLE][MAX_TABLE]) {
 	for (int i = 0; i < (k + n); i++) {
 		for (int j = 0; j < n; j++) {
 			// note that div_table[1][3] means 1 div 3 in the finite field, and xor 
 			// is subtraction/addition 
 			cauchy[i][j] = div_table[1][x[i] ^ y[j]];
+		}
+	}
+}
+
+/*
+ *  Given in_matrix (either cauchy or inverted cauchy), expand each element 
+ *  with basis vectors in field. For a confusing explanation that is slightly
+ *  different from this implementation, see: https://arxiv.org/pdf/1611.09968.pdf
+ *  out_matrix is updated (should have dims: field * (k + n) x field * n)
+ */
+
+void expand_matrix(int **in_matrix, int **out_matrix, int field, int k, int n, int mul_table[MAX_TABLE][MAX_TABLE]) {
+	// create basis "vectors" for the given field (representing each as a num is easier)
+	int basis_nums[field];
+	for (int i = 0; i < field; i++) {
+		basis_nums[i] = pow(2, i);
+	}
+
+	/*
+	 *  Iterates over each row, each column of in_matrix. Then creates a field * field
+	 *  matrix using basis_nums, this matrix represents the expanded version of the 
+	 *  single number in the original in_matrix. This expanded matrix is put into
+	 *  out_matrix for each element in in_matrix. This is very confusing.
+	 */
+
+	for (int row = 0; row < (k + n); row++) {
+
+		for (int col = 0; col < n; col++) {
+
+			for (int basis_idx = 0; basis_idx < field; basis_idx++) {
+				// get the product between the number from in_matrix and the basis num
+				int product = mul_table[in_matrix[row][col]][basis_nums[basis_idx]];
+
+				for (int bit_idx = 0; bit_idx < field; bit_idx++) {
+				  /* Sets the correct idx in out_matrix to the values in product starting from the
+					 * lsb up to the gsb. This is done with a right bit shift and & 1. This is very
+           * confusing, but it works.
+					 */ 
+
+					out_matrix[(field * row) + bit_idx][(field * col) + basis_idx] = (product >> bit_idx) & 1;
+				}
+			}
 		}
 	}
 }
