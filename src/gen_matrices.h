@@ -19,3 +19,4 @@ int load_table(int field, char path[MAX_PATH_LEN], int table[MAX_TABLE][MAX_TABL
 int handle_args(int argc, char **argv, char arg_status[MAX_STATUS_LEN], int *k, int *n, int *overwrite, int *field);
 void gen_x_y(int k, int n, int *x, int *y);
 void gen_cauchy(int **cauchy, int *x, int *y, int k, int n, int div_table[MAX_TABLE][MAX_TABLE]);
+void expand_matrix(int **in_matrix, int **out_matrix, int field, int k, int n, int mul_table[MAX_TABLE][MAX_TABLE]);
