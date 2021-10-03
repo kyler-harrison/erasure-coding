@@ -11,10 +11,11 @@
  *	   could just allocate max table size and then smaller ones only use what they need)
  *  [x] generate x, y sets for cauchy
  *  [x] generate cauchy matrix
- *  [] expand matrix (used to create final encoder/decoder)
+ *  [x] expand matrix (used to create final encoder/decoder)
+ *  [x] how 2 "drop" rows?
  *  [] invert cauchy matrix
- *  [] write encode_decode.c containing arrays of encoder/decoder
- *  [] write encode_decode.h
+ *  [] function to write encode_decode.c containing arrays of encoder/decoder
+ *  [] function to write encode_decode.h
  */
 
 int main(int argc, char **argv) {
@@ -123,12 +124,23 @@ int main(int argc, char **argv) {
 	// generate expanded cauchy matrix
 	expand_matrix(cauchy, expanded_cauchy, field, k, n, mul_table);
 
-	for (int i = 0; i < field * (k + n); i++) {
-		for (int j = 0; j < field * n; j++) {
-			printf("%d ", expanded_cauchy[i][j]);
-		}
-		printf("\n");
+	// TODO this should either be a cl arg or should be determined somewhere based on
+	// the shards that were not returned, for now just dropping the first 
+	// create array of row indexes to drop from cauchy (need to drop k to make square)
+	int row_drops[k];
+	for (int i = 0; i < k; i++) {
+		row_drops[i] = i;
 	}
+
+	// allocate mem for the square cauchy (with rows dropped)
+	int *sq_cauchy[n];
+	for (int i = 0; i < n; i++) {
+		sq_cauchy[i] = (int *) malloc(n * sizeof(int));
+	}
+
+	// create the square cauchy with rows removed
+	// TODO check output more thoroughly
+	create_sq_matrix(cauchy, sq_cauchy, row_drops, n);
 
 	// FREEDOM
 	free(x);
@@ -139,6 +151,9 @@ int main(int argc, char **argv) {
 	for (int i = 0; i < (field * (k + n)); i++) {
 		free(expanded_cauchy[i]);
 	}
+	for (int i = 0; i < n; i++) {
+		free(sq_cauchy[i]);
+	}
 
 	return 0;
 }
@@ -147,7 +162,7 @@ int main(int argc, char **argv) {
  *  Processes command line arguments. Does checks, decides on field. 
  *  For now, args are all required, should be:
  *  ./gen_matrices [k] [n] [overwrite_bool]
- *  TODO should include optional decision for drop rows?
+ *  TODO should include option for drop rows (i.e. the erasures, the row indexes that are missing) 
  */
 
 int handle_args(int argc, char **argv, char arg_status[MAX_STATUS_LEN], int *k, int *n, int *overwrite, int *field) {
@@ -281,6 +296,7 @@ void expand_matrix(int **in_matrix, int **out_matrix, int field, int k, int n, i
 	for (int i = 0; i < field; i++) {
 		basis_nums[i] = pow(2, i);
 	}
+	int count = 0;
 
 	/*
 	 *  Iterates over each row, each column of in_matrix. Then creates a field * field
@@ -304,8 +320,23 @@ void expand_matrix(int **in_matrix, int **out_matrix, int field, int k, int n, i
 					 */ 
 
 					out_matrix[(field * row) + bit_idx][(field * col) + basis_idx] = (product >> bit_idx) & 1;
+					count++;
 				}
 			}
+		}
+	}
+	printf("count = %d, should be %d\n", count, (field * (k + n)) * (field * n));
+}
+
+/*
+ *  Given in_matrix, drop the row indexes in row_drops to make a square matrix in 
+ *  out_matrix. out_matrix should already be initialized as a square matrix.
+ */
+
+void create_sq_matrix(int **in_matrix, int **out_matrix, int *row_drops, int n) {
+	for (int row = 0; row < n; row++) {
+		for (int col = 0; col < n; col++) {
+			out_matrix[row][col] = in_matrix[row][col];
 		}
 	}
 }
