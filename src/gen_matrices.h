@@ -20,3 +20,4 @@ int handle_args(int argc, char **argv, char arg_status[MAX_STATUS_LEN], int *k, 
 void gen_x_y(int k, int n, int *x, int *y);
 void gen_cauchy(int **cauchy, int *x, int *y, int k, int n, int div_table[MAX_TABLE][MAX_TABLE]);
 void expand_matrix(int **in_matrix, int **out_matrix, int field, int k, int n, int mul_table[MAX_TABLE][MAX_TABLE]);
+void create_sq_matrix(int **in_matrix, int **out_matrix, int *drop_rows, int n);
