@@ -13,7 +13,7 @@
  *  [x] generate cauchy matrix
  *  [x] expand matrix (used to create final encoder/decoder)
  *  [x] how 2 "drop" rows?
- *  [] invert cauchy matrix
+ *  [x] invert cauchy matrix
  *  [] function to write encode_decode.c containing arrays of encoder/decoder
  *  [] function to write encode_decode.h
  */
@@ -95,8 +95,7 @@ int main(int argc, char **argv) {
 	load_table(field, mul_path, mul_table, num_rows, num_cols);
 	load_table(field, div_path, div_table, num_rows, num_cols);
 
-	// allocate mem for x and y disjoint sets (used to make a Cauchy matrix
-	// of (k + n) x n dims
+	// allocate mem for x and y disjoint sets (used to make a Cauchy matrix of (k + n) x n dims)
 	int *x = (int *) malloc(sizeof(int) * (k + n));
 	int *y = (int *) malloc(sizeof(int) * n);
 
@@ -120,8 +119,8 @@ int main(int argc, char **argv) {
 		expanded_cauchy[i] = (int *) malloc(field * n * sizeof(int));
 	}
 
-	// generate expanded cauchy matrix
-	expand_matrix(cauchy, expanded_cauchy, field, k, n, mul_table);
+	// generate expanded cauchy matrix, this is the final encoder
+	expand_matrix(cauchy, expanded_cauchy, field, k + n, n, mul_table);
 
 	// create array of row indexes to keep from cauchy (need to drop k to make square)
 	// TODO this should either be a cl arg or should be determined somewhere based on
@@ -157,6 +156,24 @@ int main(int argc, char **argv) {
 	// create the inverse cauchy
 	invert_cauchy(sq_cauchy, inv_cauchy, n, x_rm, y, mul_table, div_table); 
 
+	// allocate mem for expanded inverse cauchy matrix, this will have dims (field * n) x (field * n)
+	int *expanded_inv_cauchy[field * n];
+	for (int i = 0; i < (field * n); i++) {
+		expanded_inv_cauchy[i] = (int *) malloc(field * n * sizeof(int));
+	}
+
+	// expand inverse cauchy, this is the final decoder matrix
+	expand_matrix(inv_cauchy, expanded_inv_cauchy, field, n, n, mul_table);
+
+	/*
+	for (int i = 0; i < field * n; i++) {
+		for (int j = 0; j < field * n; j++) {
+			printf("%d ", expanded_inv_cauchy[i][j]);
+		}
+		printf("\n");
+	}
+	*/
+
 	// FREEDOM
 	free(x);
 	free(y);
@@ -175,6 +192,10 @@ int main(int argc, char **argv) {
 
 	for (int i = 0; i < n; i++) {
 		free(inv_cauchy[i]);
+	}
+
+	for (int i = 0; i < (field * n); i++) {
+		free(expanded_inv_cauchy[i]);
 	}
 
 	return 0;
@@ -312,7 +333,7 @@ void gen_cauchy(int **cauchy, int *x, int *y, int k, int n, int div_table[MAX_TA
  *  out_matrix is updated (should have dims: field * (k + n) x field * n)
  */
 
-void expand_matrix(int **in_matrix, int **out_matrix, int field, int k, int n, int mul_table[MAX_TABLE][MAX_TABLE]) {
+void expand_matrix(int **in_matrix, int **out_matrix, int field, int row_dim, int col_dim, int mul_table[MAX_TABLE][MAX_TABLE]) {
 	// create basis "vectors" for the given field (representing each as a num is easier)
 	int basis_nums[field];
 
@@ -329,9 +350,9 @@ void expand_matrix(int **in_matrix, int **out_matrix, int field, int k, int n, i
 	 *  out_matrix for each element in in_matrix. This is very confusing.
 	 */
 
-	for (int row = 0; row < (k + n); row++) {
+	for (int row = 0; row < row_dim; row++) {
 
-		for (int col = 0; col < n; col++) {
+		for (int col = 0; col < col_dim; col++) {
 
 			for (int basis_idx = 0; basis_idx < field; basis_idx++) {
 				// get the product between the number from in_matrix and the basis num
@@ -401,3 +422,6 @@ void invert_cauchy(int **sq_cauchy, int **inv_cauchy, int row_col_dim, int *x_rm
 	}
 }
 
+int write_header(char *file_path, int **encoder, int encoder_rows, int encoder_cols, int **decoder, int decoder_dims) {
+	return 0;
+}
