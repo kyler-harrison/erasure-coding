@@ -12,7 +12,8 @@
 #define OK (0)
 #define INVALID_FIELD (-1)
 #define FILE_READ_ERR (-2)
-#define BAD_ARGS (-3)
+#define FILE_WRITE_ERR (-3)
+#define BAD_ARGS (-4)
 
 // function prototypes
 int load_table(int field, char path[MAX_PATH_LEN], int table[MAX_TABLE][MAX_TABLE], int rows, int cols);
@@ -22,4 +23,5 @@ void gen_cauchy(int **cauchy, int *x, int *y, int k, int n, int div_table[MAX_TA
 void expand_matrix(int **in_matrix, int **out_matrix, int field, int row_dim, int col_dim, int mul_table[MAX_TABLE][MAX_TABLE]);
 void create_sq_matrix(int **in_matrix, int **out_matrix, int *drop_rows, int n);
 void invert_cauchy(int **sq_cauchy, int **inv_cauchy, int row_col_dim, int *x_rm, int *y, int mul_table[MAX_TABLE][MAX_TABLE], int div_table[MAX_TABLE][MAX_TABLE]);
+void write_matrix_line(FILE *file_ptr, int **matrix, char *var_name, int rows, int cols);
 int write_header(char *file_path, int **encoder, int encoder_rows, int encoder_cols, int **decoder, int decoder_dims);
