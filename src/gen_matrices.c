@@ -5,7 +5,7 @@
 #include "gen_matrices.h"
 
 /*  TODO: 
- *  [x] process cl args, do checks on k, n, num row drops, and whatever else
+ *  [x] process cl args, do checks on k, n, indexes of rows to keep (i.e. indexes of returned shards), write bool
  *  [x] load mul/div tables into arrays (probs need to #define possible dimensions 
  *     beforehand and init based on cl args unless there's a better way, i guess 
  *	   could just allocate max table size and then smaller ones only use what they need)
@@ -30,7 +30,6 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "%s\n", arg_status_str);
 		return arg_status;
 	}
-	printf("k = %d, n = %d, overwrite = %d, arg_status = %d, field = %d\n", k, n, overwrite, arg_status, field);
 
 	// TODO should consider dynamic mem allocation for tables and path strings
 
@@ -124,12 +123,20 @@ int main(int argc, char **argv) {
 	// generate expanded cauchy matrix
 	expand_matrix(cauchy, expanded_cauchy, field, k, n, mul_table);
 
+	// create array of row indexes to keep from cauchy (need to drop k to make square)
 	// TODO this should either be a cl arg or should be determined somewhere based on
-	// the shards that were not returned, for now just dropping the first 
-	// create array of row indexes to drop from cauchy (need to drop k to make square)
-	int row_drops[k];
-	for (int i = 0; i < k; i++) {
-		row_drops[i] = i;
+	// the shards that were not returned, for now just keeping the first however many
+	// NOTE order matters here (results later on are different since everything just assumes sequential operation)
+	int row_keeps[n];
+	for (int i = 0; i < n; i++) {
+		row_keeps[i] = i;
+	}
+
+	// remove values from the set x (could make this a function but eh why)
+	int x_rm[n];
+
+	for (int i = 0; i < n; i++) {
+		x_rm[i] = x[row_keeps[i]];
 	}
 
 	// allocate mem for the square cauchy (with rows dropped)
@@ -138,8 +145,8 @@ int main(int argc, char **argv) {
 		sq_cauchy[i] = (int *) malloc(n * sizeof(int));
 	}
 
-	// create the square cauchy with rows removed
-	create_sq_matrix(cauchy, sq_cauchy, row_drops, n);
+	// create the square cauchy with only row_keeps row indexes 
+	create_sq_matrix(cauchy, sq_cauchy, row_keeps, n);
 
 	// allocate mem for the inverse cauchy (based on the square cauchy)
 	int *inv_cauchy[n];
@@ -148,14 +155,7 @@ int main(int argc, char **argv) {
 	}
 
 	// create the inverse cauchy
-	invert_cauchy(sq_cauchy, inv_cauchy, n, x, y, mul_table, div_table); 
-
-	for (int i = 0; i < n; i++) {
-		for (int j = 0; j < n; j++) {
-			printf("%d ", inv_cauchy[i][j]);
-		}
-		printf("\n");
-	}
+	invert_cauchy(sq_cauchy, inv_cauchy, n, x_rm, y, mul_table, div_table); 
 
 	// FREEDOM
 	free(x);
@@ -184,7 +184,7 @@ int main(int argc, char **argv) {
  *  Processes command line arguments. Does checks, decides on field. 
  *  For now, args are all required, should be:
  *  ./gen_matrices [k] [n] [overwrite_bool]
- *  TODO should include option for drop rows (i.e. the erasures, the row indexes that are missing) 
+ *  TODO should include option for rows to keep (i.e. the non-erasures, the row indexes that are remaining (and cut down if too many for square)) 
  */
 
 int handle_args(int argc, char **argv, char arg_status[MAX_STATUS_LEN], int *k, int *n, int *overwrite, int *field) {
@@ -315,9 +315,11 @@ void gen_cauchy(int **cauchy, int *x, int *y, int k, int n, int div_table[MAX_TA
 void expand_matrix(int **in_matrix, int **out_matrix, int field, int k, int n, int mul_table[MAX_TABLE][MAX_TABLE]) {
 	// create basis "vectors" for the given field (representing each as a num is easier)
 	int basis_nums[field];
+
 	for (int i = 0; i < field; i++) {
 		basis_nums[i] = pow(2, i);
 	}
+
 	int count = 0;
 
 	/*
@@ -347,18 +349,18 @@ void expand_matrix(int **in_matrix, int **out_matrix, int field, int k, int n, i
 			}
 		}
 	}
-	printf("count = %d, should be %d\n", count, (field * (k + n)) * (field * n));
 }
 
 /*
- *  Given in_matrix, drop the row indexes in row_drops to make a square matrix in 
+ *  Given in_matrix, keep the row indexes in row_keeps to make a square matrix in 
  *  out_matrix. out_matrix should already be initialized as a square matrix.
  */
-// TODO this doesnt implement what it says - will fix  momentarily
-void create_sq_matrix(int **in_matrix, int **out_matrix, int *row_drops, int n) {
-	for (int row = 0; row < n; row++) {
+void create_sq_matrix(int **in_matrix, int **out_matrix, int *row_keeps, int n) {
+	for (int i = 0; i < n; i++) {
+		int row_keep = row_keeps[i];
+
 		for (int col = 0; col < n; col++) {
-			out_matrix[row][col] = in_matrix[row][col];
+			out_matrix[i][col] = in_matrix[row_keep][col];
 		}
 	}
 }
@@ -367,13 +369,13 @@ void create_sq_matrix(int **in_matrix, int **out_matrix, int *row_drops, int n) 
  *  Implementation of the Cauchy matrix inversion algorithm, see: https://proofwiki.org/wiki/Inverse_of_Cauchy_Matrix
  *  sq_cauchy: Cauchy matrix that has been made square
  *  inv_cauchy: array to update, should be allocated the same size as sq_cauchy 
- *  x: set disjoint of y used to create the og Cauchy (TODO is this problematic if doesnt drop same as og cauchy? probs not, cant think)
+ *  x_rm: set disjoint of y used to create the og Cauchy with same indexes removed as rows removed from sq_cauchy (IMPORTANT to do) 
  *  y: set disjoint of x used to create the og Cauchy
  *  mul_table: finite field arithmetic multiplicatoin table (2d array) 
  *  div_table: finite field arithmetic division table (2d array)
  */
 
-void invert_cauchy(int **sq_cauchy, int **inv_cauchy, int row_col_dim, int *x, int *y, int mul_table[MAX_TABLE][MAX_TABLE], int div_table[MAX_TABLE][MAX_TABLE]) {
+void invert_cauchy(int **sq_cauchy, int **inv_cauchy, int row_col_dim, int *x_rm, int *y, int mul_table[MAX_TABLE][MAX_TABLE], int div_table[MAX_TABLE][MAX_TABLE]) {
 	// O(n^3), could it be better? probably
 	for (int i = 0; i < row_col_dim; i++) {
 		for (int j = 0; j < row_col_dim; j++) {
@@ -382,10 +384,10 @@ void invert_cauchy(int **sq_cauchy, int **inv_cauchy, int row_col_dim, int *x, i
 			int denom1 = 1;
 
 			for (int k = 0; k < row_col_dim; k++) {
-				numerator = mul_table[numerator][mul_table[x[j] ^ y[k]][x[k] ^ y[i]]];
+				numerator = mul_table[numerator][mul_table[x_rm[j] ^ y[k]][x_rm[k] ^ y[i]]];
 
 				if (k != j) {
-					denom0 = mul_table[denom0][x[j] ^ x[k]];
+					denom0 = mul_table[denom0][x_rm[j] ^ x_rm[k]];
 				}
 
 				if (k != i) {
@@ -393,7 +395,7 @@ void invert_cauchy(int **sq_cauchy, int **inv_cauchy, int row_col_dim, int *x, i
 				}
 
 			// this looks convoluted, but its simple if broken down and compared to the proofwiki page
-			inv_cauchy[i][j] = div_table[numerator][mul_table[x[j] ^ y[i]][mul_table[denom0][denom1]]];
+			inv_cauchy[i][j] = div_table[numerator][mul_table[x_rm[j] ^ y[i]][mul_table[denom0][denom1]]];
 			}
 		}
 	}
