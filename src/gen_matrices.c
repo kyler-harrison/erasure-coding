@@ -14,7 +14,6 @@
  *  [x] expand matrix (used to create final encoder/decoder)
  *  [x] how 2 "drop" rows?
  *  [x] invert cauchy matrix
- *  [] function to write encode_decode.c containing arrays of encoder/decoder
  *  [] function to write encode_decode.h
  */
 
@@ -173,6 +172,8 @@ int main(int argc, char **argv) {
 		printf("\n");
 	}
 	*/
+
+	write_header("encode_decode.h", expanded_cauchy, field * (k + n), field * n, expanded_inv_cauchy, field * n);
 
 	// FREEDOM
 	free(x);
@@ -422,6 +423,47 @@ void invert_cauchy(int **sq_cauchy, int **inv_cauchy, int row_col_dim, int *x_rm
 	}
 }
 
+/*
+ *  Writes a 2d array to a single line in file_ptr.
+ */
+
+void write_matrix_line(FILE *file_ptr, int **matrix, char *var_name, int rows, int cols) {
+	// NOTE gcc doesn't care about the extra commas at end of arrays
+
+	fprintf(file_ptr, "int %s[%d][%d] = {", var_name, rows, cols);
+
+	for (int i = 0; i < rows; i++) {
+		fprintf(file_ptr, "{");
+
+		for (int j = 0; j < cols; j++) {
+			fprintf(file_ptr, "%d,", matrix[i][j]);
+		}
+
+		fprintf(file_ptr, "},");  
+	}
+
+	fprintf(file_ptr, "};\n");
+}
+
+/*
+ *  METAPROGRAMMING BRO (also the entire point of this file)
+ *  Writes a .h file containing the declarations of the encoder and decoder generated
+ *  in this file. decoder is square, so only need one dim decoder_dims. 
+ */
+
 int write_header(char *file_path, int **encoder, int encoder_rows, int encoder_cols, int **decoder, int decoder_dims) {
-	return 0;
+	// overwriting for now, but should implement a way to append
+	FILE *file_ptr = fopen(file_path, "w");
+
+	if (file_ptr == NULL) {
+		return FILE_WRITE_ERR;
+	}
+
+	// write encoder matrix
+	write_matrix_line(file_ptr, encoder, "encoder", encoder_rows, encoder_cols);
+
+	// write decoder matrix
+	write_matrix_line(file_ptr, decoder, "decoder", decoder_dims, decoder_dims);
+
+	return OK;
 }
