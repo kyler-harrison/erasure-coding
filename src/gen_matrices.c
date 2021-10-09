@@ -139,20 +139,42 @@ int main(int argc, char **argv) {
 	}
 
 	// create the square cauchy with rows removed
-	// TODO check output more thoroughly
 	create_sq_matrix(cauchy, sq_cauchy, row_drops, n);
+
+	// allocate mem for the inverse cauchy (based on the square cauchy)
+	int *inv_cauchy[n];
+	for (int i = 0; i < n; i++) {
+		inv_cauchy[i] = (int *) malloc(n * sizeof(int));
+	}
+
+	// create the inverse cauchy
+	invert_cauchy(sq_cauchy, inv_cauchy, n, x, y, mul_table, div_table); 
+
+	for (int i = 0; i < n; i++) {
+		for (int j = 0; j < n; j++) {
+			printf("%d ", inv_cauchy[i][j]);
+		}
+		printf("\n");
+	}
 
 	// FREEDOM
 	free(x);
 	free(y);
+
 	for (int i = 0; i < (k + n); i++) {
 		free(cauchy[i]);
 	}
+
 	for (int i = 0; i < (field * (k + n)); i++) {
 		free(expanded_cauchy[i]);
 	}
+
 	for (int i = 0; i < n; i++) {
 		free(sq_cauchy[i]);
+	}
+
+	for (int i = 0; i < n; i++) {
+		free(inv_cauchy[i]);
 	}
 
 	return 0;
@@ -197,7 +219,7 @@ int handle_args(int argc, char **argv, char arg_status[MAX_STATUS_LEN], int *k, 
 		return BAD_ARGS;
 	}
 
-	// need a cauchy matrix dims (k + n) x n
+	// need a cauchy matrix with dims (k + n) x n
 	// which means need a set (x) of length (k + n) disjoint of another set (y) of length n
 	// so total number of unique numbers is k + n + n 
 	int unique_nums = *k + (2 * *n);
@@ -332,11 +354,47 @@ void expand_matrix(int **in_matrix, int **out_matrix, int field, int k, int n, i
  *  Given in_matrix, drop the row indexes in row_drops to make a square matrix in 
  *  out_matrix. out_matrix should already be initialized as a square matrix.
  */
-
+// TODO this doesnt implement what it says - will fix  momentarily
 void create_sq_matrix(int **in_matrix, int **out_matrix, int *row_drops, int n) {
 	for (int row = 0; row < n; row++) {
 		for (int col = 0; col < n; col++) {
 			out_matrix[row][col] = in_matrix[row][col];
+		}
+	}
+}
+
+/* 
+ *  Implementation of the Cauchy matrix inversion algorithm, see: https://proofwiki.org/wiki/Inverse_of_Cauchy_Matrix
+ *  sq_cauchy: Cauchy matrix that has been made square
+ *  inv_cauchy: array to update, should be allocated the same size as sq_cauchy 
+ *  x: set disjoint of y used to create the og Cauchy (TODO is this problematic if doesnt drop same as og cauchy? probs not, cant think)
+ *  y: set disjoint of x used to create the og Cauchy
+ *  mul_table: finite field arithmetic multiplicatoin table (2d array) 
+ *  div_table: finite field arithmetic division table (2d array)
+ */
+
+void invert_cauchy(int **sq_cauchy, int **inv_cauchy, int row_col_dim, int *x, int *y, int mul_table[MAX_TABLE][MAX_TABLE], int div_table[MAX_TABLE][MAX_TABLE]) {
+	// O(n^3), could it be better? probably
+	for (int i = 0; i < row_col_dim; i++) {
+		for (int j = 0; j < row_col_dim; j++) {
+			int numerator = 1;
+			int denom0 = 1;
+			int denom1 = 1;
+
+			for (int k = 0; k < row_col_dim; k++) {
+				numerator = mul_table[numerator][mul_table[x[j] ^ y[k]][x[k] ^ y[i]]];
+
+				if (k != j) {
+					denom0 = mul_table[denom0][x[j] ^ x[k]];
+				}
+
+				if (k != i) {
+					denom1 = mul_table[denom1][y[i] ^ y[k]];
+				}
+
+			// this looks convoluted, but its simple if broken down and compared to the proofwiki page
+			inv_cauchy[i][j] = div_table[numerator][mul_table[x[j] ^ y[i]][mul_table[denom0][denom1]]];
+			}
 		}
 	}
 }
