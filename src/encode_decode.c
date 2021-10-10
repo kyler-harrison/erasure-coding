@@ -7,11 +7,12 @@
 
 int main(int argc, char **argv) {
 	int op_type;  // 0 means encode, 1 means decode
-	char base_path[MAX_PATH_LEN];  // path without shard index to read/write
+	char file_path[MAX_PATH_LEN];  // input/output file path, either the file to shard or where to write reconstruction
+	char shard_base_path[MAX_PATH_LEN];  // path without shard index to read/write
 	char arg_status_str[MAX_STATUS_LEN];  // will be filled if input args have error
 
 	// check args and set variables
-	int arg_status = handle_args(argc, argv, &op_type, base_path, arg_status_str);
+	int arg_status = handle_args(argc, argv, &op_type, file_path, shard_base_path, arg_status_str);
 
 	if (arg_status != OK) {
 		fprintf(stderr, "%s\n", arg_status_str);
@@ -32,16 +33,17 @@ int main(int argc, char **argv) {
 
 /*
  *  Checks for valid arguments and sets variables for whether to encode/decode.
- *  op_type is 0 for encode, 1 for decode. base_path is the file path to read or
- *  write to without the shard index. After encoding with a base_path of "shard_path", 
- *  each shard will be a file named "shard_path0", "shard_path1", ..., "shard_pathN"
- *  If decoding, will read in files using same naming convention.
+ *  op_type is 0 for encode, 1 for decode. file_path is input/output path of file to shard/reconstruct.
+ *  shard_base_path is the file path to read or write to without the shard index. 
+ *  After encoding with a shard_base_path of "shard_path", each shard will be a file named 
+ *  "shard_path0", "shard_path1", ..., "shard_pathN" If decoding, will read in 
+ *  files using same naming convention.
  */
 
-int handle_args(int argc, char **argv, int *op_type, char base_path[MAX_PATH_LEN], char arg_status_str[MAX_STATUS_LEN]) {
-	if (argc != 3) {
-		strncpy(arg_status_str, "Need 2 arguments corresponding to encode/decode and base file name.\nExample: ./encode_decode 0 file_shard", MAX_STATUS_LEN);
-		arg_status_str[sizeof("Need 2 arguments corresponding to encode/decode and base file name.\nExample: ./encode_decode 0 file_shard") - 1] = '\0';
+int handle_args(int argc, char **argv, int *op_type, char file_path[MAX_PATH_LEN], char shard_base_path[MAX_PATH_LEN], char arg_status_str[MAX_STATUS_LEN]) {
+	if (argc != 4) {
+		strncpy(arg_status_str, "Need 3 arguments corresponding to encode/decode integer, file path to write/read to/from, and base shard file path.\nExample: ./encode_decode 0 input_file file_shard", MAX_STATUS_LEN);
+		arg_status_str[sizeof("Need 3 arguments corresponding to encode/decode integer, file path to write/read to/from, and base shard file path.\nExample: ./encode_decode 0 input_file file_shard") - 1] = '\0';
 		return BAD_ARGS;
 	}
 
@@ -63,9 +65,13 @@ int handle_args(int argc, char **argv, int *op_type, char base_path[MAX_PATH_LEN
 			return BAD_ARGS;
 	}
 
-	// copy inputted base path (NOTE if length of base_path > MAX_PATH_LEN, only the chars up to MAX_PATH_LEN - 1 are copied)
-	strncpy(base_path, argv[2], MAX_PATH_LEN);
-	base_path[sizeof(argv[2]) - 1] = '\0';
+	// copy paths (NOTE if length of inputted string > MAX_PATH_LEN, only the chars up to MAX_PATH_LEN - 1 are copied and no err outputted)
+
+	strncpy(file_path, argv[2], MAX_PATH_LEN);
+	file_path[sizeof(argv[2]) - 1] = '\0';
+
+	strncpy(shard_base_path, argv[3], MAX_PATH_LEN);
+	shard_base_path[sizeof(argv[3]) - 1] = '\0';
 
 	return OK;
 }
