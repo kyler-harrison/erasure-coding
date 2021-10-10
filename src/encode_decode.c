@@ -20,7 +20,7 @@ int main(int argc, char **argv) {
 	}
 
 	if (op_type == 0) {
-		//encode();
+		encode();
 	} else if (op_type == 1) {
 		//decode();
 	} else {
@@ -72,6 +72,28 @@ int handle_args(int argc, char **argv, int *op_type, char file_path[MAX_PATH_LEN
 
 	strncpy(shard_base_path, argv[3], MAX_PATH_LEN);
 	shard_base_path[sizeof(argv[3]) - 1] = '\0';
+
+	return OK;
+}
+
+/*
+ *  Shards the input_path file using the pre-computed encoder matrix (see gen_matrices.c).
+ *  Each output shard is written to a file named output_base_path with its shard idx at end.
+ *  Returns OK if successful, error else.
+ */
+
+int encode(char input_path[MAX_PATH_LEN], char output_base_path[MAX_PATH_LEN]) {
+	/* PSEUDO
+		 get input file size, compute how many bytes_per_row in output matrix
+
+		 iterate through rows of ENCODER, iterate through bytes_per_row, iterate through ENCODER_COLS
+		 while computing offset in file corresponding to output matrix offset
+
+		 fseek to whatever offset (could this be simpler?), update resulting byte by xor between 
+		 ENCODER[ENCODER_ROW] and the data byte at fseeked file position
+
+		 once done looping through ENCODER_COLS, write final resulting byte
+	*/
 
 	return OK;
 }
