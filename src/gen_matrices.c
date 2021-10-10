@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include "constants.h"
 #include "gen_matrices.h"
 
 /*  TODO: 
@@ -14,7 +15,7 @@
  *  [x] expand matrix (used to create final encoder/decoder)
  *  [x] how 2 "drop" rows?
  *  [x] invert cauchy matrix
- *  [] function to write encode_decode.h
+ *  [x] function to write encode_decode.h
  */
 
 int main(int argc, char **argv) {
@@ -173,7 +174,7 @@ int main(int argc, char **argv) {
 	}
 	*/
 
-	write_header("encode_decode.h", expanded_cauchy, field * (k + n), field * n, expanded_inv_cauchy, field * n);
+	write_header("encode_decode_matrix.h", expanded_cauchy, field * (k + n), field * n, expanded_inv_cauchy, field * n);
 
 	// FREEDOM
 	free(x);
@@ -207,6 +208,7 @@ int main(int argc, char **argv) {
  *  For now, args are all required, should be:
  *  ./gen_matrices [k] [n] [overwrite_bool]
  *  TODO should include option for rows to keep (i.e. the non-erasures, the row indexes that are remaining (and cut down if too many for square)) 
+ *  since decoder has to be created after data returned, should also have option to just create decoder (when decoding the encoder already exists)
  */
 
 int handle_args(int argc, char **argv, char arg_status[MAX_STATUS_LEN], int *k, int *n, int *overwrite, int *field) {
