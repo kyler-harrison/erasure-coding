@@ -6,14 +6,25 @@
 #include "encode_decode_matrix.h"
 
 int main(int argc, char **argv) {
-	int op_type;
-	char base_path[MAX_PATH_LEN];
-	char arg_status_str[MAX_STATUS_LEN];
+	int op_type;  // 0 means encode, 1 means decode
+	char base_path[MAX_PATH_LEN];  // path without shard index to read/write
+	char arg_status_str[MAX_STATUS_LEN];  // will be filled if input args have error
+
+	// check args and set variables
 	int arg_status = handle_args(argc, argv, &op_type, base_path, arg_status_str);
 
 	if (arg_status != OK) {
 		fprintf(stderr, "%s\n", arg_status_str);
 		return arg_status;
+	}
+
+	if (op_type == 0) {
+		//encode();
+	} else if (op_type == 1) {
+		//decode();
+	} else {
+		fprintf(stderr, "how did that happen?\n");
+		return BAD_ARGS;
 	}
 
 	return 0;
