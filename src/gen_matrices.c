@@ -461,11 +461,17 @@ int write_header(char *file_path, int **encoder, int encoder_rows, int encoder_c
 		return FILE_WRITE_ERR;
 	}
 
+	// write matrix dimensions as #define constants
+	fprintf(file_ptr, "#define ENCODER_ROWS %d\n", encoder_rows);
+	fprintf(file_ptr, "#define ENCODER_COLS %d\n", encoder_cols);
+	fprintf(file_ptr, "#define DECODER_ROWS %d\n", decoder_dims);
+	fprintf(file_ptr, "#define DECODER_COLS %d\n", decoder_dims);
+
 	// write encoder matrix
-	write_matrix_line(file_ptr, encoder, "encoder", encoder_rows, encoder_cols);
+	write_matrix_line(file_ptr, encoder, "ENCODER", encoder_rows, encoder_cols);
 
 	// write decoder matrix
-	write_matrix_line(file_ptr, decoder, "decoder", decoder_dims, decoder_dims);
+	write_matrix_line(file_ptr, decoder, "DECODER", decoder_dims, decoder_dims);
 
 	return OK;
 }
